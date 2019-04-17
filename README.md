@@ -4,9 +4,6 @@ This is a personal repository containing code examples of some medium to complex
 Included are the following code examples:
 
 # Complete Nested Stack Example (Folder called 'Nested_Stack')
-This example contains code for deploying a nested stack. I've included sub-stacks that have exported variables which are then used in the other stacks. 
-
-Note: I initially had a hard time piecing out this information from AWS official documentation, but the way to sequence these nested stacks is to use the 'DependsOn' tag
 
 # A Python Lambda Function to restart Sagemaker Notebook Instances (Folder called 'SagemakerRestartNI')
 
