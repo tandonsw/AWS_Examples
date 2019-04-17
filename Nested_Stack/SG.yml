@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This Cloudformation creates SageMaker Seciurity Group
+Parameters:
+  pVpcId:
+    Description: VPC Id
+    Type: AWS::EC2::VPC::Id
+Resources:    
+  SageMakerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:  provided SageMaker Security Group
+      VpcId: !Ref pVpcId
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+        Description: Allow traffic for Python PIP installs   
+      Tags:
+        -
+          Key: Name
+          Value: sg_aws_sagemaker
+Outputs:
+  oSageMakerSecurityGroupOutput:
+    Description: SageMaker SecurityGroup export
+    Value: !GetAtt SageMakerSecurityGroup.GroupId
+    Export: 
+      Name: SageMakerSecurityGroup

@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Cloudformation creates SageMaker Notebook Instance Lifecycle Config 
+Resources:
+  BasicNotebookInstanceLifecycleConfig:
+    Type: "AWS::SageMaker::NotebookInstanceLifecycleConfig"
+    Properties:
+      NotebookInstanceLifecycleConfigName: SageMakerStandardLC
+      OnStart:
+        - Content:
+            Fn::Base64: !Sub |
+              #!/bin/bash
+              # su ec2-user
+              # echo '. ./.bashrc' >> .bash_profile
+Outputs:
+  oBasicNotebookInstanceLifecycleConfigId:
+    Value: !Ref BasicNotebookInstanceLifecycleConfig
+    Export: 
+      Name: SageMakerLifecycleconfig

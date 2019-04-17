@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: This Cloudformation creates a Nested Stack
+Resources:
+  AdminRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/AdminRole.yml
+      TimeoutInMinutes: 60
+  ServiceRole:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: "AdminRole"
+    Properties:
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/ServiceRole.yml
+      TimeoutInMinutes: 60
+  NILifecycleConfig:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/NILifecycleConfig.yml
+      TimeoutInMinutes: 60
+  SG:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        pVpcId: vpc-09c8ab98a1c1487b4
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/SG.yml
+      TimeoutInMinutes: 60
+  KMSKey:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: "ServiceRole"
+    Properties:
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/KMSKey.yml
+      TimeoutInMinutes: 60
+  RestartNI:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: "ServiceRole"
+    Properties:
+      Parameters:
+        pCostCenter: 100000
+      TemplateURL: https://s3.<Region>.amazonaws.com/<s3-bucket>/<key>/RestartNI.yml
+      TimeoutInMinutes: 60

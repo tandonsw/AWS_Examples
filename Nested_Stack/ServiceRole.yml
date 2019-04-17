@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Cloudformation creates a SageMaker Service Role 
+Parameters:
+  pSageMkrServiceRoleName:
+    Description:       Enter SageMkr Service role name
+    Type:              String
+    Default:           SageMaker-Service
+  pSageMkrServicePolicyName:
+    Description:       Enter SageMkr Service policy name
+    Type:              String
+    Default:           SageMaker-Service
+Resources:
+  rSagemakerServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName:
+        Ref: pSageMkrServiceRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - sagemaker.amazonaws.com
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName:
+            Ref: pSageMkrServicePolicyName
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - 'sagemaker:*'
+                Resource: '*'
+              -
+                Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'cloudwatch:PutMetricData'
+                  - 'cloudwatch:PutMetricAlarm'
+                  - 'cloudwatch:DescribeAlarms'
+                  - 'cloudwatch:DeleteAlarms'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:CreateNetworkInterfacePermission'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:DeleteNetworkInterfacePermission'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:DescribeVpcs'
+                  - 'ec2:DescribeDhcpOptions'
+                  - 'ec2:DescribeSubnets'
+                  - 'ec2:DescribeSecurityGroups'
+                  - 'ec2:DescribeVpcEndpoints'
+                  - 'application-autoscaling:DeleteScalingPolicy'
+                  - 'application-autoscaling:DeleteScheduledAction'
+                  - 'application-autoscaling:DeregisterScalableTarget'
+                  - 'application-autoscaling:DescribeScalableTargets'
+                  - 'application-autoscaling:DescribeScalingActivities'
+                  - 'application-autoscaling:DescribeScalingPolicies'
+                  - 'application-autoscaling:DescribeScheduledActions'
+                  - 'application-autoscaling:PutScalingPolicy'
+                  - 'application-autoscaling:PutScheduledAction'
+                  - 'application-autoscaling:RegisterScalableTarget'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:GetLogEvents'
+                  - 'logs:PutLogEvents'
+                  - 'kms:ListAliases'
+                  - 'kms:DescribeKey'
+                Resource: '*'
+              -
+                Action: 'iam:CreateServiceLinkedRole'
+                Effect: Allow
+                Resource: 'arn:aws:iam::*:role/aws-service-role/sagemaker.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_SageMakerEndpoint'
+                Condition:
+                  StringLike:
+                    'iam:AWSServiceName': sagemaker.application-autoscaling.amazonaws.com
+Outputs:
+  oExportServiceRole:
+    Description: Sagemaker Service Role
+    Value: !GetAtt rSagemakerServiceRole.Arn
+    Export:
+      Name: SagemakerServiceRole

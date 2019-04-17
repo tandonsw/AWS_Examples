@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Cloudformation creates SageMaker KMS Key
+Parameters:
+  pSagemakerKMSKeyAlias:
+    Description:       Enter SageMkr KMS Key Alias
+    Type:              String
+    Default:           alias/SagemakerKMSKey  
+Resources:
+  SagemakerKMSKey: 
+    Type: AWS::KMS::Key
+    Properties: 
+      Description: "KMS key for Sagemaker"
+      KeyPolicy: 
+        Version: "2012-10-17"
+        Id: "key-consolepolicy-3"
+        Statement: 
+          - 
+            Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*' 
+          - 
+            Sid: "Allow administration of the key"
+            Effect: "Allow"
+            Principal: 
+              AWS: !ImportValue SagemakerAdminRole
+            Action: 
+              - 'kms:Create*'
+              - 'kms:Describe*'
+              - 'kms:Enable*'
+              - 'kms:List*'
+              - 'kms:Put*'
+              - 'kms:Update*'
+              - 'kms:Revoke*'
+              - 'kms:Disable*'
+              - 'kms:Get*'
+              - 'kms:Delete*'
+              - 'kms:TagResource'
+              - 'kms:UntagResource'
+              - 'kms:ScheduleKeyDeletion'
+              - 'kms:CancelKeyDeletion'
+            Resource: "*"
+          - 
+            Sid: "Allow use of the key"
+            Effect: "Allow"
+            Principal: 
+              AWS: !ImportValue SagemakerServiceRole
+            Action: 
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - 
+            Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS: !ImportValue SagemakerServiceRole
+            Action:
+                - 'kms:CreateGrant'
+                - 'kms:ListGrants'
+                - 'kms:RevokeGrant'
+            Resource: '*'
+            Condition:
+                Bool:
+                    'kms:GrantIsForAWSResource': true     
+  SagemakerKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Ref pSagemakerKMSKeyAlias
+      TargetKeyId: !Ref "SagemakerKMSKey"  
+Outputs:
+  oSagemakerKMSKeyARN:
+    Description: Sagemaker KMS Key export
+    Value: !GetAtt SagemakerKMSKey.Arn
+    Export: 
+      Name: SagemakerKMSKeyARN 
