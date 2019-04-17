@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This Cloudformation creates  SageMaker Notebook Instance Restart Lambda Function along with its associated triggers
+Parameters:
+  pIsCloudTrailEnabled:
+    Description: Specify if CloudTrail is enabled in the current region
+    Type: String
+    Default: 'Yes'
+    AllowedValues:
+        - 'Yes'
+        - 'No'
+  pLambdaSourceBucket:
+    Type: String
+    Default: test
+    Description: S3 Bucket where the source zip file for the lambda.
+  pLambdaObjectKey:
+    Type: String
+    Default: Sagemaker/SageMakerRestartNotebookInstance.zip
+    Description: S3 key to zip which contains lambda source.
+Conditions:
+  CreateResources:
+      'Fn::Equals':
+          -
+              Ref: pIsCloudTrailEnabled
+          - 'Yes'
+Resources:
+  RestartEventRule:
+      Type: 'AWS::Events::Rule'
+      Condition: CreateResources
+      Properties:
+          Description: Trigger a Lambda function every third Monday of the month at 5 AM
+          ScheduleExpression: cron(0 5 ? * 1#2 *)
+          Name: 'SageMaker-Restart-Notebook-Instance'
+          State: ENABLED
+          Targets:
+              -
+                  Arn:
+                      Ref: SMProdAlias
+                  Id: Production                   
+  MySNSTopic: 
+    Type: "AWS::SNS::Topic"
+    Properties: 
+      Subscription: 
+        - Endpoint: "<test_email>"
+          Protocol: email
+      TopicName: "SagemakerOperations"
+  RestartNI:
+      Type: 'AWS::Lambda::Function'
+      Condition: CreateResources
+      Properties:
+          FunctionName: RestartNI
+          Code:
+              S3Bucket:
+                  Ref: pLambdaSourceBucket
+              S3Key:
+                  Ref: pLambdaObjectKey
+          Description: This function restarts Sagemaker Notebook Instances when a new Amazon Linux patch is available.
+          Handler: function.lambda_handler
+          Role: !ImportValue SagemakerServiceRole
+          Runtime: python2.7
+          Timeout: '300'
+          Environment:
+              Variables:
+                  SNS_TOPIC_ARN: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:SagemakerOperations'
+          Tags:
+              -
+                  Key: Name
+                  Value: RestartNI
+              -
+                  Key: Purpose
+                  Value: This function restarts Sagemaker Notebook Instances when a new Amazon Linux patch is available.
+              -
+                  Key: Language
+                  Value: python2.7
+  StableVersion:
+      Type: 'AWS::Lambda::Version'
+      Condition: CreateResources
+      Properties:
+          FunctionName:
+              Ref: RestartNI
+          Description: Stable version
+  SMProdAlias:
+      Type: 'AWS::Lambda::Alias'
+      Condition: CreateResources
+      Properties:
+          FunctionName:
+              Ref: RestartNI
+          FunctionVersion:
+              'Fn::GetAtt':
+                  - StableVersion
+                  - Version
+          Name: PROD
+  PermissionForEventsToInvokeLambda:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+          FunctionName:
+              Ref: SMProdAlias
+          Action: 'lambda:InvokeFunction'
+          Principal: events.amazonaws.com
+          SourceArn:
+              'Fn::GetAtt':
+                  - RestartEventRule
+                  - Arn
+  RestartNIAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+        AlarmDescription: Alarm for Lambda Fn errors
+        AlarmActions:
+            -   !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:SagemakerOperations'
+        MetricName: Errors
+        Namespace: AWS/Lambda
+        Statistic: Average
+        Period: '60'
+        EvaluationPeriods: '1'
+        Threshold: '1'
+        TreatMissingData: 'ignore'
+        ComparisonOperator: GreaterThanThreshold
+        Dimensions:
+            - Name: FunctionName
+              Value: SageMakerRestartNotebookInstance
