@@ -5,15 +5,15 @@ Included are the following code examples:
 
 # Complete Nested Stack Example 
 
-(Folder called 'Nested_Stack')
+Folder called 'Nested_Stack'
 
 # A Python Lambda Function to restart Sagemaker Notebook Instances 
 
-(Folder called 'RestartNI')
+Folder called 'RestartNI'
 
 # Boto3 code to create a Sagemaker Notebook Instance
 
-(Folder called 'RestartNI')
+Folder called 'RestartNI'
 
 # Boto3 code to assume any role in any AWS account using STS 
 
